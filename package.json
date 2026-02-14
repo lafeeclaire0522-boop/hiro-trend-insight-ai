@@ -1,17 +1,5 @@
-{
-  "name": "hiro-trend-insight-ai",
-  "version": "1.0.0",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "dev": "node server.js",
-    "start": "node server.js"
-  },
-  "dependencies": {
-    "express": "^4.19.2",
-    "openai": "^4.0.0"
-  },
-  "engines": {
-    "node": ">=18"
-  }
-}
+"dependencies": {
+  "express": "^4.19.2",
+  "openai": "^4.0.0",
+  "@google/generative-ai": "^0.21.0"
+},
