@@ -1,0 +1,1 @@
+window.MOCK_SOURCES = [];
