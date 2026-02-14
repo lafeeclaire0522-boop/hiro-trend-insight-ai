@@ -58,3 +58,4 @@ res.status(500).json({ error: err.message });
 app.listen(PORT, () => {
 console.log("Server running");
 });
+app.use(express.static("public"));
