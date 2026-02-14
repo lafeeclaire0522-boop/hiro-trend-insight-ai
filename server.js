@@ -87,25 +87,59 @@ app.post("/api/research", async (req, res) => {
       "- 可能なら定量（%/価格/件数/市場規模など）を入れるが、数字は出典付きのみ。",
       "- 出典が弱い数字は“参考値”として扱い、risksに回す。"
     ].join("\n");
+// 1) 検索フェーズ（web_search ON / JSONモードOFF）
+const r1 = await client.responses.create({
+  model: "gpt-5.2",
+  input: [
+    { role: "system", content: system },
+    { role: "user", content: user }
+  ],
+  tools: [{ type: "web_search" }],
+  // ★重要：ここでは JSONモードを指定しない（text.format を書かない）
+  reasoning: { effort: "medium" },
+  store: false
+});
 
-    const response = await client.responses.create({
-      model: "gpt-5.2",
-      input: [
-        { role: "system", content: system },
-        { role: "user", content: user }
-      ],
-      // web_search tool: documented in OpenAI Responses API guides
-      tools: [{ type: "web_search" }],
-      text: { format: { type: "json_object" } },
-      reasoning: { effort: "medium" },
-      store: false
-    });
+const draft = r1.output_text || "";
 
-    const jsonText = response.output_text || "{}";
-    let out;
-    try{ out = JSON.parse(jsonText); }catch(e){
-      return res.status(500).send("Model did not return valid JSON.\n\n" + jsonText.slice(0, 1500));
+// 2) 整形フェーズ（web_search OFF / JSONモードON）
+const formatterSystem =
+  "あなたは整形専用。次の文章を、指定スキーマに完全準拠したJSONだけに変換して返す。JSON以外は一切出力しない。";
+
+// あなたの system 文字列の中にJSONスキーマが書かれているので、ここでは再掲せずに “draft” を材料に整形させます。
+// もしモデルがスキーマを見失う場合は、system変数の中の「出力JSONスキーマ」部分を別constで渡す形にします（後述）。
+
+const r2 = await client.responses.create({
+  model: "gpt-5.2",
+  input: [
+    { role: "system", content: formatterSystem },
+    {
+      role: "user",
+      content:
+        "以下の文章を、元の設計（trends/implications/risks/next_actions/sources/credibility_score 等）を保ったまま、JSONだけに整形して。\n\n文章:\n" +
+        draft
     }
+  ],
+  // ★重要：ここは検索しないのでJSONモードOK
+  text: { format: { type: "json_object" } },
+  store: false
+});
+
+const jsonText = r2.output_text || "{}";
+
+let out;
+try {
+  out = JSON.parse(jsonText);
+} catch (e) {
+  return res.status(500).send("Formatter did not return valid JSON.\n\n" + jsonText.slice(0, 1500));
+}
+
+out.id = out.id || crypto.randomUUID();
+out.generated_at = out.generated_at || new Date().toISOString();
+res.json(out);
+  });
+
+    
 
     out.id = out.id || crypto.randomUUID();
     out.generated_at = out.generated_at || new Date().toISOString();
