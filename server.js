@@ -70,6 +70,7 @@ res.json(json);
 res.status(500).json({ error: err?.message || String(err) });
 }
 });
+app.use(express.static("public"));
 app.listen(PORT, () => {
 console.log("Server running on port", PORT);
 });
