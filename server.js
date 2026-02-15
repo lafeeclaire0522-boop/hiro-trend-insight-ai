@@ -17,18 +17,44 @@ app.get("/health", (_req, res) => {
 app.post("/api/research", async (req, res) => {
     try {
         const topic = String(req.body?.topic || "").trim();
-        if (!topic) return res.status(400).json({ error: "topic is required" });
-        if (!apiKey) return res.status(500).json({ error: "API KEY MISSING" });
+        if (!topic) return res.status(400).json({ error: "トピックを入力してください" });
+        if (!apiKey) return res.status(500).json({ error: "APIキーが設定されていません" });
 
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
-        const prompt = `テーマ: ${topic} についてトレンド分析を日本語のJSON形式で作成してください。`;
+        // 最新のモデル指定方式に修正
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        
+        // HIROさんの「本来の出力形式」を再現するプロンプト
+        const prompt = `
+            あなたは食品・菓子業界の戦略家です。
+            テーマ: 「${topic}」について、以下の構造で厳密なJSON形式で回答してください。
+            
+            {
+                "title": "分析タイトル",
+                "summary": "全体要約",
+                "trends": ["トレンド1", "トレンド2", "トレンド3"],
+                "implications": ["戦略的示唆1", "戦略的示唆2"],
+                "risks": ["リスク1", "リスク2"],
+                "next_actions": ["次の一手1", "次の一手2"],
+                "sources": [{"title":"出典名","publisher":"発行元","date":"日付","url":"URL"}],
+                "credibility_score": 5
+            }
+        `;
+
         const result = await model.generateContent(prompt);
-        res.json({ data: result.response.text(), id: crypto.randomUUID() });
+        const response = await result.response;
+        const text = response.text().replace(/```json|```/g, "").trim();
+        
+        const jsonResponse = JSON.parse(text);
+        jsonResponse.id = crypto.randomUUID();
+        jsonResponse.generated_at = new Date().toISOString();
+
+        res.json(jsonResponse);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error(err);
+        res.status(500).json({ error: "分析中にエラーが発生しました。再度お試しください。" });
     }
 });
 
 app.listen(PORT, "0.0.0.0", () => {
-    console.log("Server running on port", PORT);
+    console.log(`Server running on port ${PORT}`);
 });
