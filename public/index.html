@@ -1,1 +1,61 @@
-<!DOCTYPE html> <html lang="ja"> <head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>HIRO's トレンドインサイト</title> <style> body{ font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif; margin:30px; } input{ padding:10px; width:320px; } button{ padding:10px 16px; margin-left:8px; cursor:pointer; } pre{ background:#111; color:#eee; padding:16px; margin-top:20px; border-radius:8px; overflow:auto; } </style> </head> <body> <h1>HIRO's トレンドインサイト（テスト）</h1> <input id="topic" placeholder="例：冷凍スイーツの最新動向"> <button onclick="runResearch()">調査</button> <pre id="result">ここに結果が表示されます</pre> <script> async function runResearch(){ const topic=document.getElementById("topic").value.trim(); if(!topic){ alert("テーマを入力してください"); return; } const resultEl=document.getElementById("result"); resultEl.textContent="調査中..."; try{ const res=await fetch("/api/research",{ method:"POST", headers:{ "Content-Type":"application/json" }, body:JSON.stringify({ topic:topic }) }); if(!res.ok){ const t=await res.text(); throw new Error(t||("HTTP "+res.status)); } const data=await res.json(); resultEl.textContent=JSON.stringify(data,null,2); }catch(e){ resultEl.textContent="エラー:\n"+e.message; alert("調査に失敗。RenderのLogsを確認してください。"); } } </script> </body> </html>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HIRO's トレンドインサイト</title>
+  <style>
+    body{
+      font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
+      margin:30px;
+    }
+    input{ padding:10px; width:320px; }
+    button{ padding:10px 16px; margin-left:8px; cursor:pointer; }
+    pre{
+      background:#111; color:#eee; padding:16px; margin-top:20px;
+      border-radius:8px; overflow:auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>HIRO's トレンドインサイト（テスト）</h1>
+
+  <input id="topic" placeholder="例：冷凍スイーツの最新動向" />
+  <button onclick="runResearch()">調査</button>
+
+  <pre id="result">ここに結果が表示されます</pre>
+
+  <script>
+    async function runResearch(){
+      const topic = document.getElementById("topic").value.trim();
+      if(!topic){
+        alert("テーマを入力してください");
+        return;
+      }
+
+      const resultEl = document.getElementById("result");
+      resultEl.textContent = "調査中...";
+
+      try{
+        const res = await fetch("/api/research", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ topic })
+        });
+
+        if(!res.ok){
+          const t = await res.text();
+          throw new Error(t || ("HTTP " + res.status));
+        }
+
+        const data = await res.json();
+        resultEl.textContent = JSON.stringify(data, null, 2);
+
+      }catch(e){
+        resultEl.textContent = "エラー:\n" + (e.message || e);
+        alert("調査に失敗。RenderのLogsを確認してください。");
+      }
+    }
+  </script>
+</body>
+</html>
